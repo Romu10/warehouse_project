@@ -7,19 +7,11 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     return LaunchDescription([
+
         DeclareLaunchArgument(
             'map_file',
-            default_value='/home/user/ros2_ws/src/warehouse_project/map_server/config/warehouse_map_sim.yaml',
-            description='Full path to the map file.'
-        ),
-
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            output='screen',
-            arguments=['-d', '/home/user/ros2_ws/src/warehouse_project/localization_server/rviz/localization_config.rviz'],
-            parameters=[{'use_sim_time': True}]
+            default_value='/home/user/ros2_ws/src/warehouse_project/map_server/config/warehouse_map_real.yaml',  
+            description='Name of the map file.'
         ),
 
         Node(
@@ -40,6 +32,7 @@ def generate_launch_description():
             output='screen',
             parameters=["/home/user/ros2_ws/src/warehouse_project/localization_server/config/amcl_config.yaml"]
         ),
+
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',

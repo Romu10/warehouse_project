@@ -16,28 +16,6 @@ def generate_launch_description():
             arguments=['-d', '/home/user/ros2_ws/src/warehouse_project/path_planner_server/rviz/pathplanning.rviz'],
             parameters=[{'use_sim_time': True}]
         ),
-        DeclareLaunchArgument(
-            'map_file',
-            default_value='/home/user/ros2_ws/src/warehouse_project/map_server/config/warehouse_map_sim.yaml',
-            description='Full path to the map file.'
-        ),
-        Node(
-            package='nav2_map_server',
-            executable='map_server',
-            name='map_server',
-            output='screen',
-            parameters=[
-                {'use_sim_time': True},
-                {'yaml_filename': LaunchConfiguration('map_file')}
-            ]
-        ),
-        Node(
-            package='nav2_amcl',
-            executable='amcl',
-            name='amcl',
-            output='screen',
-            parameters=["/home/user/ros2_ws/src/warehouse_project/localization_server/config/amcl_config.yaml"]
-        ),
         Node(
             package='nav2_planner',
             executable='planner_server',
@@ -77,7 +55,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': True},
                         {'autostart': True},
-                        {'node_names': ['map_server','amcl','planner_server', 'controller_server', 'bt_navigator', 'recoveries_server']}],
+                        {'node_names': ['planner_server', 'controller_server', 'bt_navigator', 'recoveries_server']}],
         ),
 
     ])
