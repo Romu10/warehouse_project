@@ -45,6 +45,7 @@ def generate_launch_description():
             executable='recoveries_server',
             name='recoveries_server',
             parameters=["/home/user/ros2_ws/src/warehouse_project/path_planner_server/config/recovery.yaml"],
+            remappings=[('/cmd_vel', '/robot/cmd_vel')],
             output='screen'
         ),
 
