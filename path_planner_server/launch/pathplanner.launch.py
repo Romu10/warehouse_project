@@ -5,6 +5,9 @@ from launch_ros.actions import Node
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 
+filters_yaml = os.path.join(get_package_share_directory(
+        'path_planner_server'), 'config', 'filters.yaml')
+
 
 def generate_launch_description():
     return LaunchDescription([
@@ -48,6 +51,21 @@ def generate_launch_description():
             remappings=[('/cmd_vel', '/robot/cmd_vel')],
             output='screen'
         ),
+        Node(
+            package='nav2_map_server',
+            executable='map_server',
+            name='filter_mask_server',
+            output='screen',
+            emulate_tty=True,
+            parameters=[filters_yaml]),
+
+        Node(
+            package='nav2_map_server',
+            executable='costmap_filter_info_server',
+            name='costmap_filter_info_server',
+            output='screen',
+            emulate_tty=True,
+            parameters=[filters_yaml]),
 
         Node(
             package='nav2_lifecycle_manager',
@@ -56,7 +74,7 @@ def generate_launch_description():
             output='screen',
             parameters=[{'use_sim_time': True},
                         {'autostart': True},
-                        {'node_names': ['planner_server', 'controller_server', 'bt_navigator', 'recoveries_server']}],
+                        {'node_names': ['planner_server', 'controller_server', 'bt_navigator', 'recoveries_server', 'filter_mask_server', 'costmap_filter_info_server']}],
         ),
 
     ])
