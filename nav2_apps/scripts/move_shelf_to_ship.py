@@ -23,18 +23,13 @@ import rclpy
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 # Shelf positions for picking
-shelf_positions = {
-    "shelf_A": [-3.829, -7.604],
-    "shelf_B": [-3.791, -3.287],
-    "loading_position": [5.753, -0.162],
-    "shelf_D": [-3.24, 5.861]}
+shelf_positions = {"loading_position": [5.753, -0.162]}
 
 # Shipping destination for picked products
-shipping_destinations = {
-    "recycling": [-0.205, 7.403],
-    "shipping_position": [0.324, -3.021],
-    "conveyer_432": [6.217, 2.153],
-    "frieght_bay_3": [-6.349, 9.147]}
+shipping_destinations = {"shipping_position": [0.324, -3.021]}
+
+# Initial position of the robot
+initial_position = {"init_pos": [0.007, -0.005]}
 
 '''
 Basic item picking demo. In this demonstration, the expectation
@@ -49,6 +44,7 @@ def main():
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ("shelf_A") and shipping destination ("pallet_jack7")
     ####################
+    init_position = 'init_pos'
     request_item_location = 'loading_position'
     request_destination = 'shipping_position'
     ####################
@@ -70,6 +66,7 @@ def main():
     # Wait for navigation to activate fully
     navigator.waitUntilNav2Active()
 
+    # Sending the loading position coordinates
     shelf_item_pose = PoseStamped()
     shelf_item_pose.header.frame_id = 'map'
     shelf_item_pose.header.stamp = navigator.get_clock().now().to_msg()
@@ -89,14 +86,15 @@ def main():
         feedback = navigator.getFeedback()
         if feedback and i % 5 == 0:
             print('Estimated time of arrival at ' + request_item_location +
-                  ' for worker: ' + '{0:.0f}'.format(
+                  ' for shelf: ' + '{0:.0f}'.format(
                       Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                   + ' seconds.')
 
+    # Sending the shipping position coordinates
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
-        print('Got product from ' + request_item_location +
-              '! Bringing product to shipping destination (' + request_destination + ')...')
+        print('Got shelf from ' + request_item_location +
+              '! Bringing shelf to shipping destination (' + request_destination + ')...')
         shipping_destination = PoseStamped()
         shipping_destination.header.frame_id = 'map'
         shipping_destination.header.stamp = navigator.get_clock().now().to_msg()
@@ -107,17 +105,50 @@ def main():
         navigator.goToPose(shipping_destination)
 
     elif result == TaskResult.CANCELED:
-        print('Task at ' + request_item_location +
+        print('Task at ' + request_destination +
               ' was canceled. Returning to staging point...')
         initial_pose.header.stamp = navigator.get_clock().now().to_msg()
         navigator.goToPose(initial_pose)
 
     elif result == TaskResult.FAILED:
-        print('Task at ' + request_item_location + ' failed!')
+        print('Task at ' + request_destination + ' failed!')
+        exit(-1)
+
+    i = 0
+    while not navigator.isTaskComplete():
+        i = i + 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print('Estimated time of arrival at ' + request_destination +
+                  ' for shelf: ' + '{0:.0f}'.format(
+                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
+                  + ' seconds.')
+
+    # Sending the initial position coordinates
+    result = navigator.getResult()
+    if result == TaskResult.SUCCEEDED:
+        print('Left shelf in ' + request_destination +
+              '! Going to Initial Position (' + init_position + ')...')
+        navigator.goToPose(initial_pose)
+
+    elif result == TaskResult.CANCELED:
+        print('Task at ' + init_position +
+              ' was canceled. Returning to staging point...')
+        initial_pose.header.stamp = navigator.get_clock().now().to_msg()
+        navigator.goToPose(initial_pose)
+
+    elif result == TaskResult.FAILED:
+        print('Task at ' + init_position + ' failed!')
         exit(-1)
 
     while not navigator.isTaskComplete():
-        pass
+        i = i + 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print('Estimated time of arrival at ' + init_position +
+                  ' for robot: ' + '{0:.0f}'.format(
+                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
+                  + ' seconds.')
 
     exit(0)
 
