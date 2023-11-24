@@ -16,8 +16,9 @@
 import time
 from copy import deepcopy
 from rclpy.node import Node
-
+from std_msgs.msg import Bool
 from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Polygon, Point32
 from rclpy.duration import Duration
 import rclpy
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
@@ -34,16 +35,58 @@ shipping_destinations = {"shipping_position": [0.324, -3.021]}
 # Initial position of the robot
 initial_position = {"init_pos": [0.007, -0.005]}
 
+# Variables 
+robot_status = False
+
 '''
 Basic item picking demo. In this demonstration, the expectation
 is that a person is waiting at the item shelf to put the item on the robot
 and at the pallet jack to remove it
 (probably with a button for 'got item, robot go do next task').
 '''
+def publish_global_footprint(node):
+    global_footprint_pub = node.create_publisher(Polygon,'/global_costmap/footprint', 10)
+    local_footprint_pub = node.create_publisher(Polygon,'/local_costmap/footprint', 10)
+    
+    # Crear un mensaje de tipo Polygon
+    polygon_msg = Polygon()
+
+    # Agregar puntos al mensaje
+    point1 = Point32()
+    point1.x = 0.5
+    point1.y = -0.5
+
+    point2 = Point32()
+    point2.x = 0.5
+    point2.y = 0.5
+
+    point3 = Point32()
+    point3.x = -0.5
+    point3.y = 0.5
+
+    point4 = Point32()
+    point4.x = -0.5
+    point4.y = -0.5
+
+    polygon_msg.points = [point1, point2, point3, point4]
+
+    # Publicar el mensaje
+    global_footprint_pub.publish(polygon_msg)
+    local_footprint_pub.publish(polygon_msg)
+
+def callback(msg):
+    global robot_status
+    robot_status = msg.data
+    if msg.data:
+        print("Shelf Ready to Move")
+    else:
+        print("Shelf not Ready to Move")
+
 # Function for calling the service
 def go_under_shelf():
     node = rclpy.create_node('path_manager')
     client = node.create_client(GoToLoading, 'approach_shelf')
+    subscriber = node.create_subscription(Bool, 'shelf_ready', callback, 10)
 
     while not client.wait_for_service(timeout_sec=1.0):
         node.get_logger().info('Servicio no disponible, esperando...')
@@ -54,11 +97,18 @@ def go_under_shelf():
     future = client.call_async(solicitud)
     rclpy.spin_until_future_complete(node, future)
 
+    while not robot_status:
+        print("Waiting for the Shelf to be Ready")
+        rclpy.spin_once(node, timeout_sec=1.0)
+
     if future.result() is not None:
         respuesta = future.result().complete
-        node.get_logger().info('Resultado de la llamada al servicio: %s' % respuesta)
+        node.get_logger().info('Shelf Loaded: %s' % respuesta)
+        publish_global_footprint(node)
+        print("FootPrint Changed")
     else:
-        node.get_logger().warning('Error al llamar al servicio')
+        node.get_logger().warning('Error Calling the Service')
+    
 
     node.destroy_node()
 

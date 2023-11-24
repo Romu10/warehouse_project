@@ -76,12 +76,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        cart_frame:
-          Value: true
-        leg1_frame:
-          Value: true
-        leg2_frame:
-          Value: true
         map:
           Value: true
         robot_base_docking_contact_link:
@@ -137,12 +131,6 @@ Visualization Manager:
                 robot_base_docking_contact_link:
                   {}
               robot_front_laser_base_link:
-                cart_frame:
-                  {}
-                leg1_frame:
-                  {}
-                leg2_frame:
-                  {}
                 robot_front_laser_link:
                   {}
               robot_front_rgbd_camera_rgb_base_link:
@@ -184,7 +172,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 0
+      Max Intensity: 8000
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: LaserScan
@@ -375,10 +363,36 @@ Visualization Manager:
       Update Interval: 0
       Value: true
       Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Polygon
+      Color: 25; 255; 0
+      Enabled: true
+      Name: Local_FootPrint
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /local_costmap/published_footprint
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/Polygon
+      Color: 0; 0; 255
+      Enabled: true
+      Name: Global_FootPrint
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /global_costmap/published_footprint
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: robot_front_laser_base_link
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -421,25 +435,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 5.374105930328369
+      Distance: 5.192239761352539
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.13635054230690002
-        Y: 0.3156227767467499
-        Z: 0.3270561695098877
+        X: 0.013987405225634575
+        Y: 0.23062343895435333
+        Z: 0.3670535385608673
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
-      Invert Z Axis: true
+      Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.395397424697876
+      Pitch: 1.3653974533081055
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.110400676727295
+      Yaw: 2.315396785736084
     Saved: ~
 Window Geometry:
   Displays:
