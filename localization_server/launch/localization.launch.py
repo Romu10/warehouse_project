@@ -46,4 +46,11 @@ def generate_launch_description():
                         {'autostart': True},
                         {'node_names': ['map_server', 'amcl']}]
         ),
+
+        Node(
+            package='attach_shelf',
+            executable='approach_node',
+            output='screen',
+            name='service_approach',
+        ),
     ])

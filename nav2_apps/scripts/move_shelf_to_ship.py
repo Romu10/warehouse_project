@@ -15,15 +15,18 @@
 
 import time
 from copy import deepcopy
+from rclpy.node import Node
 
 from geometry_msgs.msg import PoseStamped
 from rclpy.duration import Duration
 import rclpy
-
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
+# Defining Service 
+from attach_shelf.srv import GoToLoading
+
 # Shelf positions for picking
-shelf_positions = {"loading_position": [5.753, -0.162]}
+shelf_positions = {"loading_position": [5.80, -0.55]} #5.78
 
 # Shipping destination for picked products
 shipping_destinations = {"shipping_position": [0.324, -3.021]}
@@ -37,9 +40,30 @@ is that a person is waiting at the item shelf to put the item on the robot
 and at the pallet jack to remove it
 (probably with a button for 'got item, robot go do next task').
 '''
+# Function for calling the service
+def go_under_shelf():
+    node = rclpy.create_node('path_manager')
+    client = node.create_client(GoToLoading, 'approach_shelf')
 
+    while not client.wait_for_service(timeout_sec=1.0):
+        node.get_logger().info('Servicio no disponible, esperando...')
+
+    solicitud = GoToLoading.Request()
+    solicitud.attach_to_shelf = True  # Configura el valor según sea necesario
+
+    future = client.call_async(solicitud)
+    rclpy.spin_until_future_complete(node, future)
+
+    if future.result() is not None:
+        respuesta = future.result().complete
+        node.get_logger().info('Resultado de la llamada al servicio: %s' % respuesta)
+    else:
+        node.get_logger().warning('Error al llamar al servicio')
+
+    node.destroy_node()
 
 def main():
+
     # Recieved virtual request for picking item at Shelf A and bringing to
     # worker at the pallet jack 7 for shipping. This request would
     # contain the shelf ID ("shelf_A") and shipping destination ("pallet_jack7")
@@ -50,6 +74,10 @@ def main():
     ####################
 
     rclpy.init()
+
+    # Defining Service 
+    # node = rclpy.create_node('path_manager')
+    # client = node.create_client(GoToLoading, 'approach_shelf')
 
     navigator = BasicNavigator()
 
@@ -72,8 +100,8 @@ def main():
     shelf_item_pose.header.stamp = navigator.get_clock().now().to_msg()
     shelf_item_pose.pose.position.x = shelf_positions[request_item_location][0]
     shelf_item_pose.pose.position.y = shelf_positions[request_item_location][1]
-    shelf_item_pose.pose.orientation.z = 1.0
-    shelf_item_pose.pose.orientation.w = -1.80
+    shelf_item_pose.pose.orientation.z = -0.90  #-0.74
+    shelf_item_pose.pose.orientation.w = 0.9   #0.67
     print('Received request for item picking at ' + request_item_location + '.')
     navigator.goToPose(shelf_item_pose)
 
@@ -90,9 +118,15 @@ def main():
                       Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                   + ' seconds.')
 
-    # Sending the shipping position coordinates
+    # Read the result of the previous goal
     result = navigator.getResult()
+
+    # Sending the shipping position coordinates
     if result == TaskResult.SUCCEEDED:
+        # If robot get in the loading position then call the service to load the shelf 
+        print ('Attemping to load the shelf')
+        go_under_shelf()
+        '''
         print('Got shelf from ' + request_item_location +
               '! Bringing shelf to shipping destination (' + request_destination + ')...')
         shipping_destination = PoseStamped()
@@ -103,7 +137,8 @@ def main():
         shipping_destination.pose.orientation.z = 1.0
         shipping_destination.pose.orientation.w = 1.59
         navigator.goToPose(shipping_destination)
-
+        '''
+    '''        
     elif result == TaskResult.CANCELED:
         print('Task at ' + request_destination +
               ' was canceled. Returning to staging point...')
@@ -149,7 +184,7 @@ def main():
                   ' for robot: ' + '{0:.0f}'.format(
                       Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                   + ' seconds.')
-
+    '''
     exit(0)
 
 
