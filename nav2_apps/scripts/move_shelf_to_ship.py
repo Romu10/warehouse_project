@@ -19,8 +19,10 @@ from rclpy.node import Node
 from std_msgs.msg import Bool
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Polygon, Point32
+from std_msgs.msg import Empty
 from rclpy.duration import Duration
 import rclpy
+import math
 from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 
 # Defining Service 
@@ -44,33 +46,53 @@ is that a person is waiting at the item shelf to put the item on the robot
 and at the pallet jack to remove it
 (probably with a button for 'got item, robot go do next task').
 '''
-def publish_global_footprint(node):
+def create_circle(radius, num_points=20):
+    circle = Polygon()
+    angle_increment = 2 * math.pi / num_points
+
+    for i in range(num_points):
+        point = Point32()
+        point.x = radius * math.cos(i * angle_increment)
+        point.y = radius * math.sin(i * angle_increment)
+        circle.points.append(point)
+
+    return circle
+
+def publish_shelf_unload_footprint(node):
+    global_footprint_pub = node.create_publisher(Polygon, '/global_costmap/footprint', 10)
+    local_footprint_pub = node.create_publisher(Polygon, '/local_costmap/footprint', 10)
+    
+    circle_msg = create_circle(radius=0.3)
+
+    global_footprint_pub.publish(circle_msg)
+    local_footprint_pub.publish(circle_msg)
+    print("Changed Footprint to Unloaded Robot")
+    time.sleep(1)
+
+def publish_shelf_load_footprint(node):
     global_footprint_pub = node.create_publisher(Polygon,'/global_costmap/footprint', 10)
     local_footprint_pub = node.create_publisher(Polygon,'/local_costmap/footprint', 10)
     
-    # Crear un mensaje de tipo Polygon
     polygon_msg = Polygon()
 
-    # Agregar puntos al mensaje
     point1 = Point32()
-    point1.x = 0.5
-    point1.y = -0.5
+    point1.x = 0.4
+    point1.y = -0.4
 
     point2 = Point32()
-    point2.x = 0.5
-    point2.y = 0.5
+    point2.x = 0.4
+    point2.y = 0.4
 
     point3 = Point32()
-    point3.x = -0.5
-    point3.y = 0.5
+    point3.x = -0.4
+    point3.y = 0.4
 
     point4 = Point32()
-    point4.x = -0.5
-    point4.y = -0.5
+    point4.x = -0.4
+    point4.y = -0.4
 
     polygon_msg.points = [point1, point2, point3, point4]
 
-    # Publicar el mensaje
     global_footprint_pub.publish(polygon_msg)
     local_footprint_pub.publish(polygon_msg)
 
@@ -104,12 +126,19 @@ def go_under_shelf():
     if future.result() is not None:
         respuesta = future.result().complete
         node.get_logger().info('Shelf Loaded: %s' % respuesta)
-        publish_global_footprint(node)
+        publish_shelf_load_footprint(node)
         print("FootPrint Changed")
     else:
         node.get_logger().warning('Error Calling the Service')
-    
 
+    node.destroy_node()
+
+def unload_shelf():
+    node = rclpy.create_node('unload_shelf')
+    unload_shelf_pub = node.create_publisher(Empty,'/elevator_down', 1)
+    empty_msg = Empty()
+    unload_shelf_pub.publish(empty_msg)
+    publish_shelf_unload_footprint(node)
     node.destroy_node()
 
 def main():
@@ -150,8 +179,8 @@ def main():
     shelf_item_pose.header.stamp = navigator.get_clock().now().to_msg()
     shelf_item_pose.pose.position.x = shelf_positions[request_item_location][0]
     shelf_item_pose.pose.position.y = shelf_positions[request_item_location][1]
-    shelf_item_pose.pose.orientation.z = -0.90  #-0.74
-    shelf_item_pose.pose.orientation.w = 0.9   #0.67
+    shelf_item_pose.pose.orientation.z = -0.95  #-0.74
+    shelf_item_pose.pose.orientation.w = 0.95   #0.67
     print('Received request for item picking at ' + request_item_location + '.')
     navigator.goToPose(shelf_item_pose)
 
@@ -176,7 +205,8 @@ def main():
         # If robot get in the loading position then call the service to load the shelf 
         print ('Attemping to load the shelf')
         go_under_shelf()
-        '''
+        navigator.clearAllCostmaps()
+
         print('Got shelf from ' + request_item_location +
               '! Bringing shelf to shipping destination (' + request_destination + ')...')
         shipping_destination = PoseStamped()
@@ -184,11 +214,11 @@ def main():
         shipping_destination.header.stamp = navigator.get_clock().now().to_msg()
         shipping_destination.pose.position.x = shipping_destinations[request_destination][0]
         shipping_destination.pose.position.y = shipping_destinations[request_destination][1]
-        shipping_destination.pose.orientation.z = 1.0
-        shipping_destination.pose.orientation.w = 1.59
+        shipping_destination.pose.orientation.z = 0.70
+        shipping_destination.pose.orientation.w = 0.72
         navigator.goToPose(shipping_destination)
-        '''
-    '''        
+        
+          
     elif result == TaskResult.CANCELED:
         print('Task at ' + request_destination +
               ' was canceled. Returning to staging point...')
@@ -212,13 +242,36 @@ def main():
     # Sending the initial position coordinates
     result = navigator.getResult()
     if result == TaskResult.SUCCEEDED:
+        unload_shelf()
         print('Left shelf in ' + request_destination +
               '! Going to Initial Position (' + init_position + ')...')
         navigator.goToPose(initial_pose)
 
     elif result == TaskResult.CANCELED:
-        print('Task at ' + init_position +
+        print('Task at ' + request_destination +
               ' was canceled. Returning to staging point...')
+        initial_pose.header.stamp = navigator.get_clock().now().to_msg()
+        navigator.goToPose(initial_pose)
+
+    elif result == TaskResult.FAILED:
+        print('Task at ' + request_destination + ' failed!')
+        exit(-1)
+
+    while not navigator.isTaskComplete():
+        i = i + 1
+        feedback = navigator.getFeedback()
+        if feedback and i % 5 == 0:
+            print('Estimated time of arrival at ' + init_position +
+                  ' for robot: ' + '{0:.0f}'.format(
+                      Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
+                  + ' seconds.')
+
+    result = navigator.getResult()
+    if result == TaskResult.SUCCEEDED:
+        print('Robot arrived to initial position.')
+
+    elif result == TaskResult.CANCELED:
+        print('Task at ' + init_position + ' was canceled. Returning to staging point...')
         initial_pose.header.stamp = navigator.get_clock().now().to_msg()
         navigator.goToPose(initial_pose)
 
@@ -234,7 +287,7 @@ def main():
                   ' for robot: ' + '{0:.0f}'.format(
                       Duration.from_msg(feedback.estimated_time_remaining).nanoseconds / 1e9)
                   + ' seconds.')
-    '''
+    print('Robot Ready to Operate')
     exit(0)
 
 
