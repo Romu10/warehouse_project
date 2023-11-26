@@ -14,8 +14,8 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'map_file',
-            default_value='warehouse_map_sim.yaml',
-            description='Nombre del archivo de mapa YAML'
+            default_value='warehouse_map_real.yaml',
+            description='Nombre del archivo de mapa YAML: warehouse_map_real/sim.yaml'
         ),
         Node(
             package='nav2_map_server',
