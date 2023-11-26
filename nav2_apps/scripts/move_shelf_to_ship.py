@@ -17,6 +17,7 @@ import time
 from copy import deepcopy
 from rclpy.node import Node
 from std_msgs.msg import Bool
+from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Polygon, Point32
 from std_msgs.msg import Empty
@@ -29,13 +30,13 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from attach_shelf.srv import GoToLoading
 
 # Shelf positions for picking
-shelf_positions = {"loading_position": [5.80, -0.55]} #5.78
+shelf_positions = {"loading_position": [4.11, 2.3143]} #5.78
 
 # Shipping destination for picked products
-shipping_destinations = {"shipping_position": [0.324, -3.021]}
+shipping_destinations = {"shipping_position": [-0.5249, 0.4031]}
 
 # Initial position of the robot
-initial_position = {"init_pos": [0.007, -0.005]}
+initial_position = {"init_pos": [-0.418, 3.066]}
 
 # Variables 
 robot_status = False
@@ -135,8 +136,9 @@ def go_under_shelf():
 
 def unload_shelf():
     node = rclpy.create_node('unload_shelf')
-    unload_shelf_pub = node.create_publisher(Empty,'/elevator_down', 1)
-    empty_msg = Empty()
+    unload_shelf_pub = node.create_publisher(String,'/elevator_down', 1)
+    empty_msg = String()
+    empty_msg.data = ""
     unload_shelf_pub.publish(empty_msg)
     publish_shelf_unload_footprint(node)
     node.destroy_node()
@@ -164,10 +166,10 @@ def main():
     initial_pose = PoseStamped()
     initial_pose.header.frame_id = 'map'
     initial_pose.header.stamp = navigator.get_clock().now().to_msg()
-    initial_pose.pose.position.x = 0.007
-    initial_pose.pose.position.y = -0.005
-    initial_pose.pose.orientation.z = 0.0
-    initial_pose.pose.orientation.w = -0.021
+    initial_pose.pose.position.x = -0.418
+    initial_pose.pose.position.y = 3.066
+    initial_pose.pose.orientation.z = -0.16
+    initial_pose.pose.orientation.w = 0.98
     navigator.setInitialPose(initial_pose)
 
     # Wait for navigation to activate fully
@@ -179,8 +181,8 @@ def main():
     shelf_item_pose.header.stamp = navigator.get_clock().now().to_msg()
     shelf_item_pose.pose.position.x = shelf_positions[request_item_location][0]
     shelf_item_pose.pose.position.y = shelf_positions[request_item_location][1]
-    shelf_item_pose.pose.orientation.z = -0.95  #-0.74
-    shelf_item_pose.pose.orientation.w = 0.95   #0.67
+    shelf_item_pose.pose.orientation.z = -0.8363  #-0.74
+    shelf_item_pose.pose.orientation.w = 0.5481   #0.67
     print('Received request for item picking at ' + request_item_location + '.')
     navigator.goToPose(shelf_item_pose)
 
@@ -214,8 +216,8 @@ def main():
         shipping_destination.header.stamp = navigator.get_clock().now().to_msg()
         shipping_destination.pose.position.x = shipping_destinations[request_destination][0]
         shipping_destination.pose.position.y = shipping_destinations[request_destination][1]
-        shipping_destination.pose.orientation.z = 0.70
-        shipping_destination.pose.orientation.w = 0.72
+        shipping_destination.pose.orientation.z = 0.6104
+        shipping_destination.pose.orientation.w = 0.7920
         navigator.goToPose(shipping_destination)
         
           

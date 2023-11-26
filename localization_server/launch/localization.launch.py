@@ -23,7 +23,7 @@ def generate_launch_description():
             name='map_server',
             output='screen',
             parameters=[
-                {'use_sim_time': True},
+                {'use_sim_time': False},
                 {'yaml_filename': PathJoinSubstitution([
                     LaunchConfiguration('map_file_path'),
                     LaunchConfiguration('map_file')
@@ -42,7 +42,7 @@ def generate_launch_description():
             executable='lifecycle_manager',
             name='lifecycle_manager_mapper',
             output='screen',
-            parameters=[{'use_sim_time': True},
+            parameters=[{'use_sim_time': False},
                         {'autostart': True},
                         {'node_names': ['map_server', 'amcl']}]
         ),
