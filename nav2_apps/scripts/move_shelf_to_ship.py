@@ -30,7 +30,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from attach_shelf.srv import GoToLoading
 
 # Shelf positions for picking
-shelf_positions = {"loading_position": [4.11, 2.3143]} #5.78
+shelf_positions = {"loading_position": [4.11, 1.8143]} 
 
 # Shipping destination for picked products
 shipping_destinations = {"shipping_position": [-0.5249, 0.4031]}
@@ -136,11 +136,12 @@ def go_under_shelf():
 
 def unload_shelf():
     node = rclpy.create_node('unload_shelf')
-    unload_shelf_pub = node.create_publisher(String,'/elevator_down', 1)
+    unload_shelf_pub = node.create_publisher(String,'/elevator_down', 20)
     empty_msg = String()
     empty_msg.data = ""
     unload_shelf_pub.publish(empty_msg)
     publish_shelf_unload_footprint(node)
+    time.sleep(1)
     node.destroy_node()
 
 def main():
