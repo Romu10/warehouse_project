@@ -12,8 +12,8 @@ planner_server:
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 2.0
-      publish_frequency: 5.0
+      update_frequency: 5.0
+      publish_frequency: 2.0
       global_frame: map
       robot_base_frame: robot_base_footprint
       use_sim_time: false

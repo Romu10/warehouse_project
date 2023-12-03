@@ -81,11 +81,11 @@ Visualization Manager:
           Value: true
         robot_base_link:
           Value: true
-        robot_docking_station_laser:
+        robot_cart_laser:
           Value: true
-        robot_docking_station_laser_noisy:
+        robot_cart_laser_noisy:
           Value: true
-        robot_docking_station_laser_noisy_0:
+        robot_cart_laser_noisy_0:
           Value: true
         robot_elevator_base_link:
           Value: true
@@ -386,25 +386,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 22.656299591064453
+      Distance: 10.52167797088623
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.4059817790985107
-        Y: 0.2726413607597351
-        Z: 0.1640869826078415
+        X: 1.278139352798462
+        Y: 0.743581235408783
+        Z: 0.10455586016178131
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.360397458076477
+      Pitch: 1.5697963237762451
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 2.2953968048095703
+      Yaw: 2.9000000953674316
     Saved: ~
 Window Geometry:
   Displays:

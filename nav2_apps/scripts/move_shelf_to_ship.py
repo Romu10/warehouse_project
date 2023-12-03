@@ -30,7 +30,7 @@ from nav2_simple_commander.robot_navigator import BasicNavigator, TaskResult
 from attach_shelf.srv import GoToLoading
 
 # Shelf positions for picking
-shelf_positions = {"loading_position": [4.11, 1.8143]} 
+shelf_positions = {"loading_position": [4.11, 2.0543]} 
 
 # Shipping destination for picked products
 shipping_destinations = {"shipping_position": [-0.5249, 0.4031]}
@@ -40,6 +40,7 @@ initial_position = {"init_pos": [-0.418, 3.066]}
 
 # Variables 
 robot_status = False
+shelf_down = False
 
 '''
 Basic item picking demo. In this demonstration, the expectation
@@ -105,6 +106,15 @@ def callback(msg):
     else:
         print("Shelf not Ready to Move")
 
+def callback_elevator(msg):
+    global shelf_down
+    shelf_down = msg.data
+    if not msg.data:
+        print("Shelf dropped, Ready to Move")
+        shelf_down = True
+    else:
+        print("Shelf not dropped, not Ready to Move")
+
 # Function for calling the service
 def go_under_shelf():
     node = rclpy.create_node('path_manager')
@@ -137,10 +147,19 @@ def go_under_shelf():
 def unload_shelf():
     node = rclpy.create_node('unload_shelf')
     unload_shelf_pub = node.create_publisher(String,'/elevator_down', 20)
+    subscriber_elevator = node.create_subscription(String, '/elevator_down', callback_elevator, 10)
     empty_msg = String()
     empty_msg.data = ""
-    unload_shelf_pub.publish(empty_msg)
+    #unload_shelf_pub.publish(empty_msg)
+    #publish_shelf_unload_footprint(node)
+
+    while not shelf_down:
+        unload_shelf_pub.publish(empty_msg)
+        print("Attempting to drop the Shelf")
+        rclpy.spin_once(node, timeout_sec=1.0)
+    
     publish_shelf_unload_footprint(node)
+
     time.sleep(1)
     node.destroy_node()
 
